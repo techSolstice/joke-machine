@@ -43,7 +43,7 @@ func main() {
     })
   })
 
-  router.GET("/", func(c *gin.Context) {
+  router.GET("/joke", func(c *gin.Context) {
 
     var nameResponse NameResponse
     var jokeResponse JokeResponse
@@ -60,7 +60,26 @@ func main() {
 			"quote": jokeResponse.Value.JokeString,
 		})
   })
-  router.Run()
+
+
+  router.GET("/", func(c *gin.Context) {
+
+    var nameResponse NameResponse
+    var jokeResponse JokeResponse
+
+    callExternal(c, "https://names.mcquay.me/api/v0/", &nameResponse);
+    // TODO: Perhaps settle on a default like "Jane Doe" if the above call fails
+
+    // TODO: Perform some encoding in case names are returned like "Jimmy John Doe" (space in name) or "Jimmy-Jane Doe" (dash in name) or non-ASCII names including Unicode names 
+    url := fmt.Sprintf("http://joke.loc8u.com:8888/joke?limitTo=nerdy&firstName=%s&lastName=%s", nameResponse.FirstName, nameResponse.LastName)
+    callExternal(c, url, &jokeResponse);
+    // TODO: Cache a set of responses which will also help with error handling
+
+    c.String(http.StatusOK, jokeResponse.Value.JokeString)
+  })
+
+  // TODO: Change depending on environment (local, Production)
+  router.Run("localhost:5000")
 }
 
 // Reduce URL Call boilerplate
